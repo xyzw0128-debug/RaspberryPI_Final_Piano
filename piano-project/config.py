@@ -1,6 +1,8 @@
 # config.py
 
 from hardware.led_controller import LED
+from pathlib import Path
+
 
 # ===== GPIO 핀 (BCM 기준) =====
 PIR_PIN = 4
@@ -26,10 +28,12 @@ IDLE_TIMEOUT_SEC = 60
 PRACTICE_FEEDBACK_SEC = 0.3
 
 # ===== 경로 =====
-RECORDINGS_DIR = "recordings"
-SONGS_DIR = "practice/songs"
-LOGS_DIR = "logs"
-LOG_FILE = f"{LOGS_DIR}/main.log"
+BASE_DIR = Path(__file__).resolve().parent
+
+RECORDINGS_DIR = BASE_DIR / "recordings"
+SONGS_DIR = BASE_DIR / "practice" / "songs"
+LOGS_DIR = BASE_DIR / "logs"
+LOG_FILE = LOGS_DIR / "main.log"
 
 # ===== MIDI =====
 MIDI_PORT_NAME = None  # None이면 자동으로 첫 번째 입력 포트 사용
