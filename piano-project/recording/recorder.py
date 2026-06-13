@@ -10,8 +10,9 @@ import mido
 
 
 class Recorder:
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, max_recordings=10):
         self.output_dir = output_dir
+        self.max_recordings = max_recordings
         os.makedirs(self.output_dir, exist_ok=True)
 
         self.is_recording = False
@@ -41,6 +42,7 @@ class Recorder:
         filename = self._resolve_filename(filename)
         path = os.path.join(self.output_dir, filename)
         self._save(path, events, start_time)
+        self._enforce_recording_limit()
         return filename
 
     def _resolve_filename(self, filename):
@@ -73,4 +75,17 @@ class Recorder:
     def list_recordings(self):
         files = [f for f in os.listdir(self.output_dir) if f.endswith(".mid")]
         files.sort(reverse=True)
-        return files
+        return files[:self.max_recordings]
+
+    def _enforce_recording_limit(self):
+        files = [
+            f for f in os.listdir(self.output_dir)
+            if f.endswith(".mid")
+        ]
+        files.sort(
+            key=lambda f: os.path.getmtime(os.path.join(self.output_dir, f)),
+            reverse=True,
+        )
+
+        for filename in files[self.max_recordings:]:
+            os.remove(os.path.join(self.output_dir, filename))

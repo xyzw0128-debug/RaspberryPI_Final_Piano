@@ -42,6 +42,9 @@ class Controller:
         self._publish_status()
 
     def stop(self):
+        if self._feedback_timer:
+            self._feedback_timer.cancel()
+            self._feedback_timer = None
         self.midi.stop()
         self.mqtt.loop_stop()
         self.led.cleanup()
@@ -76,8 +79,15 @@ class Controller:
 
         if new_state == State.PRACTICE:
             if self._pending_song_id:
-                self.practice.load_song(self._pending_song_id)
-                self.practice.start()
+                try:
+                    self.practice.load_song(self._pending_song_id)
+                    self.practice.start()
+                except Exception as exc:
+                    self.sm.state = State.IDLE
+                    self.led.set_state(State.IDLE)
+                    self._pending_song_id = None
+                    self._publish_status(extra={"error": str(exc)})
+                    return
             self._pending_song_id = None
 
         if old_state == State.PRACTICE and new_state == State.IDLE:
@@ -95,7 +105,13 @@ class Controller:
 
         action = payload.get("action")
 
-        if action == "start_record":
+        if action == "wake":
+            self.handle_event(Event.CMD_WAKE)
+
+        elif action == "sleep":
+            self.handle_event(Event.CMD_SLEEP)
+
+        elif action == "start_record":
             self.handle_event(Event.CMD_START_RECORD)
 
         elif action == "stop_record":
@@ -141,13 +157,9 @@ class Controller:
             if self.sm.state == State.PRACTICE:
                 self.led.reset_practice_indicator()
 
-    # ---- idle timeout check (main loop에서 주기적으로 호출) ----
+    # ---- idle timeout check (수동 sleep 전환으로 변경되어 현재는 사용하지 않음) ----
     def check_timeout(self):
-        with self._lock:
-            if self.sm.state == State.IDLE:
-                elapsed = time.time() - self._last_activity
-                if elapsed >= config.IDLE_TIMEOUT_SEC:
-                    self.handle_event(Event.IDLE_TIMEOUT)
+        return
 
     # ---- status publish ----
     def _publish_status(self, extra=None):
