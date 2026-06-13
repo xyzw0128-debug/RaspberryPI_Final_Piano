@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Piano Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>Piano Assistant</h1>
+  <p>현재 상태: <span id="state">-</span></p>
+  <nav>
+    <a href="/record"><button>녹음</button></a>
+    <a href="/practice"><button>연습</button></a>
+  </nav>
+  <script src="/static/app.js"></script>
+  <script>
+    function update(status) {
+      document.getElementById("state").textContent = status.state;
+    }
+    pollStatus(update);
+  </script>
+</body>
+</html>
