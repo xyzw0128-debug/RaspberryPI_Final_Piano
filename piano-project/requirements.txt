@@ -1,0 +1,5 @@
+flask
+paho-mqtt<2.0
+mido
+python-rtmidi
+rpi-lgpio
