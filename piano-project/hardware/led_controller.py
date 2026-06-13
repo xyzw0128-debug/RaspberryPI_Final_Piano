@@ -1,5 +1,8 @@
 # hardware/led_controller.py
 
+import time
+import threading
+
 import RPi.GPIO as GPIO
 from enum import Enum
 from core.state_machine import State
@@ -30,6 +33,9 @@ class LedController:
                   LED.PRACTICE_RED: 24}
         """
         self.pin_map = pin_map
+        self._blink_thread = None
+        self._blink_stop = threading.Event()
+        self._blink_led = None
         GPIO.setmode(GPIO.BCM)
         for pin in self.pin_map.values():
             GPIO.setup(pin, GPIO.OUT)
@@ -66,6 +72,45 @@ class LedController:
             self._set(LED.PRACTICE_GREEN, False)
             self._set(LED.PRACTICE_RED, True)
 
+    def start_blink(self, led, interval=0.5):
+        """지정 LED를 백그라운드 스레드에서 interval 초 간격으로 깜빡임."""
+        self.stop_blink()
+        self._blink_led = led
+        self._blink_stop.clear()
+        self._blink_thread = threading.Thread(
+            target=self._blink_loop,
+            args=(led, interval),
+            daemon=True,
+        )
+        self._blink_thread.start()
+
+    def _blink_loop(self, led, interval):
+        on = False
+        while not self._blink_stop.is_set():
+            on = not on
+            self._set(led, on)
+            time.sleep(interval)
+        self._set(led, False)
+
+    def stop_blink(self):
+        """백그라운드 LED 깜빡임을 중지."""
+        if self._blink_thread and self._blink_thread.is_alive():
+            self._blink_stop.set()
+            self._blink_thread.join(timeout=1)
+        self._blink_thread = None
+        self._blink_led = None
+        self._blink_stop.clear()
+
+    def blink_complete(self):
+        """연습 완주 시 PRACTICE_GREEN LED를 0.3초 간격으로 3회 깜빡임."""
+        self._set(LED.PRACTICE_BLUE, False)
+        self._set(LED.PRACTICE_RED, False)
+        for _ in range(3):
+            self._set(LED.PRACTICE_GREEN, True)
+            time.sleep(0.3)
+            self._set(LED.PRACTICE_GREEN, False)
+            time.sleep(0.3)
+
     def reset_practice_indicator(self):
         """피드백 표시 후 대기 상태(blue)로 복귀"""
         self._set(LED.PRACTICE_GREEN, False)
@@ -73,5 +118,6 @@ class LedController:
         self._set(LED.PRACTICE_BLUE, True)
 
     def cleanup(self):
+        self.stop_blink()
         self.all_off()
         GPIO.cleanup()

@@ -19,6 +19,12 @@ class MidiInput:
         names = mido.get_input_names()
         if not names:
             raise RuntimeError("연결된 USB-MIDI 입력 장치가 없습니다.")
+
+        for keyword in ("MIDI", "PIANO", "CASIO", "USB"):
+            for name in names:
+                if keyword in name.upper():
+                    return name
+
         return names[0]
 
     def on_note(self, callback):
@@ -40,6 +46,8 @@ class MidiInput:
             if not self._running:
                 break
             if msg.type in ("note_on", "note_off"):
+                if msg.type == "note_on" and msg.velocity == 0:
+                    continue
                 ts = time.time()
                 for cb in self._callbacks:
                     cb(msg, ts)

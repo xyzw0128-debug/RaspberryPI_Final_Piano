@@ -21,14 +21,14 @@ def main():
     setup_logging()
     logging.info("=== Piano assistant starting ===")
 
-    controller = Controller()
+    controller = None
 
     try:
+        controller = Controller()
         controller.start()
         logging.info("Controller started. Entering main loop.")
 
         while True:
-            controller.check_timeout()
             time.sleep(1)
 
     except KeyboardInterrupt:
@@ -38,7 +38,8 @@ def main():
         logging.exception("Unexpected error in main loop")
 
     finally:
-        controller.stop()
+        if controller:
+            controller.stop()
         logging.info("=== Piano assistant stopped ===")
 
 

@@ -4,7 +4,7 @@ import threading
 import time
 
 from core.state_machine import StateMachine, State, Event
-from hardware.led_controller import LedController
+from hardware.led_controller import LedController, LED
 from hardware.pir_sensor import PIRSensor
 from hardware.midi_io import MidiInput
 from recording.recorder import Recorder
@@ -42,6 +42,9 @@ class Controller:
         self._publish_status()
 
     def stop(self):
+        if self._feedback_timer:
+            self._feedback_timer.cancel()
+            self._feedback_timer = None
         self.midi.stop()
         self.mqtt.loop_stop()
         self.led.cleanup()
@@ -64,10 +67,14 @@ class Controller:
             self._on_state_changed(old_state, new_state, event)
 
     def _on_state_changed(self, old_state, new_state, event):
+        if old_state == State.RECORDING and new_state == State.IDLE:
+            self.led.stop_blink()
+
         self.led.set_state(new_state)
 
         if new_state == State.RECORDING:
             self.recorder.start()
+            self.led.start_blink(LED.REC_GREEN)
 
         if old_state == State.RECORDING and new_state == State.IDLE:
             saved = self.recorder.stop(self._pending_filename)
@@ -76,8 +83,15 @@ class Controller:
 
         if new_state == State.PRACTICE:
             if self._pending_song_id:
-                self.practice.load_song(self._pending_song_id)
-                self.practice.start()
+                try:
+                    self.practice.load_song(self._pending_song_id)
+                    self.practice.start()
+                except Exception as exc:
+                    self.sm.state = State.IDLE
+                    self.led.set_state(State.IDLE)
+                    self._pending_song_id = None
+                    self._publish_status(extra={"error": str(exc)})
+                    return
             self._pending_song_id = None
 
         if old_state == State.PRACTICE and new_state == State.IDLE:
@@ -95,7 +109,13 @@ class Controller:
 
         action = payload.get("action")
 
-        if action == "start_record":
+        if action == "wake":
+            self.handle_event(Event.CMD_WAKE)
+
+        elif action == "sleep":
+            self.handle_event(Event.CMD_SLEEP)
+
+        elif action == "start_record":
             self.handle_event(Event.CMD_START_RECORD)
 
         elif action == "stop_record":
@@ -121,12 +141,19 @@ class Controller:
             return
 
         self.led.set_practice_feedback(result["correct"])
-        self._schedule_feedback_reset()
 
         if result["complete"]:
-            self.handle_event(Event.PRACTICE_COMPLETE)
+            threading.Thread(
+                target=self._complete_practice_after_blink,
+                daemon=True,
+            ).start()
         else:
+            self._schedule_feedback_reset()
             self._publish_status()
+
+    def _complete_practice_after_blink(self):
+        self.led.blink_complete()
+        self.handle_event(Event.PRACTICE_COMPLETE)
 
     def _schedule_feedback_reset(self):
         if self._feedback_timer:
@@ -141,13 +168,9 @@ class Controller:
             if self.sm.state == State.PRACTICE:
                 self.led.reset_practice_indicator()
 
-    # ---- idle timeout check (main loop에서 주기적으로 호출) ----
+    # ---- idle timeout check (수동 sleep 전환으로 변경되어 현재는 사용하지 않음) ----
     def check_timeout(self):
-        with self._lock:
-            if self.sm.state == State.IDLE:
-                elapsed = time.time() - self._last_activity
-                if elapsed >= config.IDLE_TIMEOUT_SEC:
-                    self.handle_event(Event.IDLE_TIMEOUT)
+        return
 
     # ---- status publish ----
     def _publish_status(self, extra=None):

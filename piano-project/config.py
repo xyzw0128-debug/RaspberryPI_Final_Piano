@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 # ===== GPIO 핀 (BCM 기준) =====
-PIR_PIN = 4
+PIR_PIN = 16
 
 LED_PIN_MAP = {
     LED.REC_GREEN: 17,
@@ -24,7 +24,6 @@ MQTT_TOPIC_STATUS = "piano/status"
 
 # ===== 타이밍 =====
 PIR_BOUNCE_MS = 2000
-IDLE_TIMEOUT_SEC = 60
 PRACTICE_FEEDBACK_SEC = 0.3
 
 # ===== 경로 =====
