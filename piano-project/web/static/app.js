@@ -26,5 +26,5 @@ function pollStatus(callback) {
       .catch(() => {});
   }
   tick();
-  setInterval(tick, 1000);
+  setInterval(tick, 200);
 }

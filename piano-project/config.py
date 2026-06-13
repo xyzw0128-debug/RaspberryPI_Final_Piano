@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 # ===== GPIO 핀 (BCM 기준) =====
-PIR_PIN = 4
+PIR_PIN = 16
 
 LED_PIN_MAP = {
     LED.REC_GREEN: 17,

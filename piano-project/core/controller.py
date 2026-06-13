@@ -4,7 +4,7 @@ import threading
 import time
 
 from core.state_machine import StateMachine, State, Event
-from hardware.led_controller import LedController
+from hardware.led_controller import LedController, LED
 from hardware.pir_sensor import PIRSensor
 from hardware.midi_io import MidiInput
 from recording.recorder import Recorder
@@ -67,10 +67,14 @@ class Controller:
             self._on_state_changed(old_state, new_state, event)
 
     def _on_state_changed(self, old_state, new_state, event):
+        if old_state == State.RECORDING and new_state == State.IDLE:
+            self.led.stop_blink()
+
         self.led.set_state(new_state)
 
         if new_state == State.RECORDING:
             self.recorder.start()
+            self.led.start_blink(LED.REC_GREEN)
 
         if old_state == State.RECORDING and new_state == State.IDLE:
             saved = self.recorder.stop(self._pending_filename)
@@ -137,12 +141,19 @@ class Controller:
             return
 
         self.led.set_practice_feedback(result["correct"])
-        self._schedule_feedback_reset()
 
         if result["complete"]:
-            self.handle_event(Event.PRACTICE_COMPLETE)
+            threading.Thread(
+                target=self._complete_practice_after_blink,
+                daemon=True,
+            ).start()
         else:
+            self._schedule_feedback_reset()
             self._publish_status()
+
+    def _complete_practice_after_blink(self):
+        self.led.blink_complete()
+        self.handle_event(Event.PRACTICE_COMPLETE)
 
     def _schedule_feedback_reset(self):
         if self._feedback_timer:
