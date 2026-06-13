@@ -8,6 +8,14 @@ import config
 
 app = Flask(__name__)
 song_catalog = PracticeSession(config.SONGS_DIR)
+ALLOWED_ACTIONS = {
+    "wake",
+    "sleep",
+    "start_record",
+    "stop_record",
+    "start_practice",
+    "stop_practice",
+}
 
 
 @app.route("/")
@@ -34,6 +42,8 @@ def api_status():
 @app.route("/api/cmd", methods=["POST"])
 def api_cmd():
     data = request.get_json(silent=True) or {}
+    if data.get("action") not in ALLOWED_ACTIONS:
+        return jsonify({"ok": False, "error": "invalid action"}), 400
     mqtt_client.send_cmd(data)
     return jsonify({"ok": True})
 

@@ -10,8 +10,10 @@
   <h1>녹음</h1>
   <p><a href="/">← 메인으로</a></p>
   <p>현재 상태: <span id="state">-</span></p>
+  <p id="stateHelp"></p>
 
   <div id="controls">
+    <button id="wakeBtn" onclick="sendCmd({action: 'wake'})">Sleep 해제</button>
     <button id="startBtn" onclick="sendCmd({action: 'start_record'})">녹음 시작</button>
 
     <div id="stopArea" style="display:none">
@@ -30,10 +32,15 @@
     let lastState = null;
 
     function update(status) {
-      document.getElementById("state").textContent = status.state;
+      const isSleep = status.state === "sleep";
+      document.getElementById("state").textContent = stateLabel(status.state);
+      document.getElementById("stateHelp").textContent = isSleep
+        ? "현재 SLEEP 상태라 녹음 조작이 막혀 있습니다. Sleep 해제 버튼 또는 PIR 감지 후 녹음할 수 있습니다."
+        : "녹음 가능한 상태입니다. 저장되는 녹음 파일은 최신 10개까지만 유지됩니다.";
+      document.getElementById("wakeBtn").style.display = isSleep ? "inline-block" : "none";
 
       document.getElementById("startBtn").style.display =
-        (status.state === "recording") ? "none" : "inline-block";
+        (status.state === "recording" || isSleep) ? "none" : "inline-block";
       document.getElementById("stopArea").style.display =
         (status.state === "recording") ? "block" : "none";
 

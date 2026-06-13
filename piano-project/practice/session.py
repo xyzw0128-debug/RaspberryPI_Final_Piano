@@ -33,9 +33,21 @@ class PracticeSession:
         return result
 
     def load_song(self, song_id):
-        path = os.path.join(self.songs_dir, f"{song_id}.json")
+        if not song_id:
+            raise ValueError("song_id가 필요합니다.")
+
+        safe_song_id = os.path.basename(song_id)
+        path = os.path.join(self.songs_dir, f"{safe_song_id}.json")
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"곡 파일을 찾을 수 없습니다: {safe_song_id}")
+
         with open(path, encoding="utf-8") as fp:
             self.song = json.load(fp)
+
+        notes = self.song.get("notes")
+        if not isinstance(notes, list) or not notes:
+            raise ValueError("곡 notes는 비어 있지 않은 리스트여야 합니다.")
+
         self.index = 0
         self.is_active = False
 

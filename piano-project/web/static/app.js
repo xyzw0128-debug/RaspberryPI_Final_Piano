@@ -1,11 +1,21 @@
 // web/static/app.js
 
 function sendCmd(payload) {
-  fetch("/api/cmd", {
+  return fetch("/api/cmd", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify(payload),
-  });
+  }).then(res => res.json());
+}
+
+function stateLabel(state) {
+  const labels = {
+    sleep: "SLEEP (절전)",
+    idle: "IDLE (대기)",
+    recording: "RECORDING (녹음 중)",
+    practice: "PRACTICE (연습 중)",
+  };
+  return labels[state] || state || "-";
 }
 
 function pollStatus(callback) {
