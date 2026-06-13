@@ -1,0 +1,65 @@
+<!-- web/templates/record.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>녹음</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>녹음</h1>
+  <p><a href="/">← 메인으로</a></p>
+  <p>현재 상태: <span id="state">-</span></p>
+
+  <div id="controls">
+    <button id="startBtn" onclick="sendCmd({action: 'start_record'})">녹음 시작</button>
+
+    <div id="stopArea" style="display:none">
+      <input id="filename" type="text" placeholder="파일명 (비워두면 날짜/시간 자동)">
+      <button onclick="stopRecording()">녹음 종료</button>
+    </div>
+  </div>
+
+  <p id="message"></p>
+
+  <h2>녹음 목록</h2>
+  <ul id="recordings"></ul>
+
+  <script src="/static/app.js"></script>
+  <script>
+    let lastState = null;
+
+    function update(status) {
+      document.getElementById("state").textContent = status.state;
+
+      document.getElementById("startBtn").style.display =
+        (status.state === "recording") ? "none" : "inline-block";
+      document.getElementById("stopArea").style.display =
+        (status.state === "recording") ? "block" : "none";
+
+      if (status.saved_recording && lastState === "recording" && status.state !== "recording") {
+        document.getElementById("message").textContent =
+          "녹음 완료: " + status.saved_recording;
+      }
+
+      const list = document.getElementById("recordings");
+      list.innerHTML = "";
+      (status.recordings || []).forEach(name => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        list.appendChild(li);
+      });
+
+      lastState = status.state;
+    }
+
+    function stopRecording() {
+      const filename = document.getElementById("filename").value.trim();
+      sendCmd({action: "stop_record", filename: filename || null});
+      document.getElementById("filename").value = "";
+    }
+
+    pollStatus(update);
+  </script>
+</body>
+</html>
