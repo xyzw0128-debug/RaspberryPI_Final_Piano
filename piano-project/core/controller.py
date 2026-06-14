@@ -67,6 +67,8 @@ class Controller:
             self._on_state_changed(old_state, new_state, event)
 
     def _on_state_changed(self, old_state, new_state, event):
+        extra = {}
+
         if old_state == State.RECORDING and new_state == State.IDLE:
             self.led.stop_blink()
 
@@ -79,7 +81,7 @@ class Controller:
         if old_state == State.RECORDING and new_state == State.IDLE:
             saved = self.recorder.stop(self._pending_filename)
             self._pending_filename = None
-            self._publish_status(extra={"saved_recording": saved})
+            extra["saved_recording"] = saved
 
         if new_state == State.PRACTICE:
             if self._pending_song_id:
@@ -90,8 +92,8 @@ class Controller:
                     self.sm.state = State.IDLE
                     self.led.set_state(State.IDLE)
                     self._pending_song_id = None
-                    self._publish_status(extra={"error": str(exc)})
-                    return
+                    extra["error"] = str(exc)
+                    new_state = State.IDLE
             self._pending_song_id = None
 
         if old_state == State.PRACTICE and new_state == State.IDLE:
@@ -100,7 +102,7 @@ class Controller:
         if new_state == State.IDLE:
             self._last_activity = time.time()
 
-        self._publish_status()
+        self._publish_status(extra=extra or None)
 
     # ---- MQTT command handling ----
     def _on_cmd_message(self, payload):
