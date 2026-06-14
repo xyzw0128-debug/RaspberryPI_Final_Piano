@@ -4,7 +4,8 @@ import threading
 import time
 
 from core.state_machine import StateMachine, State, Event
-from hardware.led_controller import LedController, LED
+from hardware.enums import LED
+from hardware.led_controller import LedController
 from hardware.pir_sensor import PIRSensor
 from hardware.midi_io import MidiInput
 from recording.recorder import Recorder
@@ -85,8 +86,7 @@ class Controller:
 
         if new_state == State.PRACTICE:
             if self._pending_song_id is None:
-                self.sm.state = State.IDLE
-                self.led.set_state(State.IDLE)
+                self._rollback_failed_practice_start()
                 extra["error"] = "song_id is required to start practice"
                 self._publish_status(extra=extra)
                 return
@@ -95,8 +95,7 @@ class Controller:
                 self.practice.load_song(self._pending_song_id)
                 self.practice.start()
             except Exception as exc:
-                self.sm.state = State.IDLE
-                self.led.set_state(State.IDLE)
+                self._rollback_failed_practice_start()
                 self._pending_song_id = None
                 extra["error"] = str(exc)
                 new_state = State.IDLE
@@ -109,6 +108,10 @@ class Controller:
             self._last_activity = time.time()
 
         self._publish_status(extra=extra or None)
+
+    def _rollback_failed_practice_start(self):
+        self.sm.handle(Event.PRACTICE_START_FAILED)
+        self.led.set_state(self.sm.state)
 
     # ---- MQTT command handling ----
     def _on_cmd_message(self, payload):

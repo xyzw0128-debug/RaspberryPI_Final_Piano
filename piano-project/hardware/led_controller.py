@@ -4,16 +4,8 @@ import time
 import threading
 
 import RPi.GPIO as GPIO
-from enum import Enum
 from core.state_machine import State
-
-
-class LED(Enum):
-    REC_GREEN = "rec_green"
-    REC_RED = "rec_red"
-    PRACTICE_GREEN = "practice_green"
-    PRACTICE_BLUE = "practice_blue"
-    PRACTICE_RED = "practice_red"
+from hardware.enums import LED
 
 
 # 상태 → 기본 점등 LED 매핑 (필요시 수정)

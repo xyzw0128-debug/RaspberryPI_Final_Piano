@@ -19,10 +19,11 @@ class Event(Enum):
     CMD_START_PRACTICE = "cmd_start_practice"
     CMD_STOP_PRACTICE = "cmd_stop_practice"
     PRACTICE_COMPLETE = "practice_complete"
+    PRACTICE_START_FAILED = "practice_start_failed"
 
 
 # (현재 상태, 이벤트) -> 다음 상태
-# 매핑에 없는 조합은 "무시"로 처리됨 (SLEEP 중 cmd_*, RECORDING/PRACTICE 중 다른 cmd 등)
+# 매핑에 없는 조합은 "무시"로 처리되고, 동일 상태 매핑은 처리되지만 changed=False를 반환함
 TRANSITIONS = {
     (State.SLEEP, Event.PIR_DETECTED): State.IDLE,
     (State.SLEEP, Event.CMD_WAKE): State.IDLE,
@@ -37,6 +38,7 @@ TRANSITIONS = {
 
     (State.PRACTICE, Event.CMD_STOP_PRACTICE): State.IDLE,
     (State.PRACTICE, Event.PRACTICE_COMPLETE): State.IDLE,
+    (State.PRACTICE, Event.PRACTICE_START_FAILED): State.IDLE,
     (State.PRACTICE, Event.PIR_DETECTED): State.PRACTICE,
 }
 
@@ -48,9 +50,9 @@ class StateMachine:
     def handle(self, event):
         """
         이벤트 처리.
-        반환: (현재 상태, transitioned: bool)
-          - transitioned=True  -> 상태가 실제로 바뀜
-          - transitioned=False -> 무시된 이벤트 (정의되지 않은 전이)
+        반환: (현재 상태, changed: bool)
+          - changed=True  -> 상태가 실제로 바뀜
+          - changed=False -> 정의되지 않은 이벤트이거나 동일 상태로의 전이라 상태 변화 없음
         """
         next_state = TRANSITIONS.get((self.state, event))
 
