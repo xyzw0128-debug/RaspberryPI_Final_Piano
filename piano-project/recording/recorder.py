@@ -28,16 +28,18 @@ class Recorder:
 
     def handle_note(self, msg, ts):
         """midi_io.on_note 콜백으로 등록"""
-        if not self.is_recording:
-            return
         with self._lock:
+            if not self.is_recording:
+                return
             self._events.append((msg, ts))
 
     def stop(self, filename=None):
         with self._lock:
             self.is_recording = False
-            events = self._events
+            events = list(self._events)
+            self._events = []
             start_time = self._start_time
+            self._start_time = None
 
         filename = self._resolve_filename(filename)
         path = os.path.join(self.output_dir, filename)
@@ -74,7 +76,10 @@ class Recorder:
 
     def list_recordings(self):
         files = [f for f in os.listdir(self.output_dir) if f.endswith(".mid")]
-        files.sort(reverse=True)
+        files.sort(
+            key=lambda f: os.path.getmtime(os.path.join(self.output_dir, f)),
+            reverse=True,
+        )
         return files[:self.max_recordings]
 
     def _enforce_recording_limit(self):

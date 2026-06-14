@@ -1,6 +1,6 @@
 # config.py
 
-from hardware.led_controller import LED
+from hardware.enums import LED
 from pathlib import Path
 
 

@@ -4,16 +4,8 @@ import time
 import threading
 
 import RPi.GPIO as GPIO
-from enum import Enum
 from core.state_machine import State
-
-
-class LED(Enum):
-    REC_GREEN = "rec_green"
-    REC_RED = "rec_red"
-    PRACTICE_GREEN = "practice_green"
-    PRACTICE_BLUE = "practice_blue"
-    PRACTICE_RED = "practice_red"
+from hardware.enums import LED
 
 
 # 상태 → 기본 점등 LED 매핑 (필요시 수정)
@@ -74,7 +66,8 @@ class LedController:
 
     def start_blink(self, led, interval=0.5):
         """지정 LED를 백그라운드 스레드에서 interval 초 간격으로 깜빡임."""
-        self.stop_blink()
+        if not self.stop_blink():
+            raise RuntimeError("previous blink thread did not stop")
         self._blink_led = led
         self._blink_stop.clear()
         self._blink_thread = threading.Thread(
@@ -92,14 +85,18 @@ class LedController:
             time.sleep(interval)
         self._set(led, False)
 
-    def stop_blink(self):
+    def stop_blink(self, timeout=1):
         """백그라운드 LED 깜빡임을 중지."""
         if self._blink_thread and self._blink_thread.is_alive():
             self._blink_stop.set()
-            self._blink_thread.join(timeout=1)
+            self._blink_thread.join(timeout=timeout)
+
+        if self._blink_thread and self._blink_thread.is_alive():
+            return False
+
         self._blink_thread = None
         self._blink_led = None
-        self._blink_stop.clear()
+        return True
 
     def blink_complete(self):
         """연습 완주 시 PRACTICE_GREEN LED를 0.3초 간격으로 3회 깜빡임."""
@@ -118,6 +115,6 @@ class LedController:
         self._set(LED.PRACTICE_BLUE, True)
 
     def cleanup(self):
-        self.stop_blink()
+        self.stop_blink(timeout=None)
         self.all_off()
         GPIO.cleanup()

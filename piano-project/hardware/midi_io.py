@@ -1,8 +1,12 @@
 # hardware/midi_io.py
 
+import logging
 import mido
 import threading
 import time
+
+logger = logging.getLogger(__name__)
+
 
 class MidiInput:
     def __init__(self, port_name=None):
@@ -42,17 +46,28 @@ class MidiInput:
         self._thread.start()
 
     def _listen(self):
-        for msg in self._port:
-            if not self._running:
-                break
-            if msg.type in ("note_on", "note_off"):
-                if msg.type == "note_on" and msg.velocity == 0:
-                    continue
-                ts = time.time()
-                for cb in self._callbacks:
-                    cb(msg, ts)
+        try:
+            for msg in self._port:
+                if not self._running:
+                    break
+                if msg.type in ("note_on", "note_off"):
+                    if msg.type == "note_on" and msg.velocity == 0:
+                        continue
+                    ts = time.time()
+                    for cb in self._callbacks:
+                        cb(msg, ts)
+        except Exception:
+            if self._running:
+                logger.exception("MIDI input listener stopped unexpectedly")
 
     def stop(self):
         self._running = False
         if self._port:
             self._port.close()
+            self._port = None
+        if self._thread:
+            self._thread.join(timeout=1)
+            if self._thread.is_alive():
+                logger.warning("MIDI input listener did not stop within timeout")
+            else:
+                self._thread = None

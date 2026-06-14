@@ -4,13 +4,18 @@ import threading
 from mqtt.client import MqttClient
 import config
 
-status_cache = {"state": "sleep", "recordings": [], "practice": None}
+DEFAULT_STATUS = {"state": "sleep", "recordings": [], "practice": None}
+status_cache = dict(DEFAULT_STATUS)
 _lock = threading.Lock()
+_start_lock = threading.Lock()
+_started = False
 
 
 def _on_status(payload):
     if isinstance(payload, dict):
         with _lock:
+            status_cache.clear()
+            status_cache.update(DEFAULT_STATUS)
             status_cache.update(payload)
 
 
@@ -19,8 +24,13 @@ mqtt.subscribe(config.MQTT_TOPIC_STATUS, _on_status)
 
 
 def start():
-    mqtt.connect()
-    mqtt.loop_start()
+    global _started
+    with _start_lock:
+        if _started:
+            return
+        mqtt.connect()
+        mqtt.loop_start()
+        _started = True
 
 
 def get_status():
