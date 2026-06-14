@@ -22,6 +22,9 @@ class PracticeSession:
 
     def list_songs(self):
         """곡 목록: [{"id": "twinkle", "title": "Twinkle Twinkle Little Star"}, ...]"""
+        if not os.path.isdir(self.songs_dir):
+            return []
+
         result = []
         for f in os.listdir(self.songs_dir):
             if not f.endswith(".json"):

@@ -67,6 +67,8 @@ class Controller:
             self._on_state_changed(old_state, new_state, event)
 
     def _on_state_changed(self, old_state, new_state, event):
+        extra = {}
+
         if old_state == State.RECORDING and new_state == State.IDLE:
             self.led.stop_blink()
 
@@ -79,19 +81,25 @@ class Controller:
         if old_state == State.RECORDING and new_state == State.IDLE:
             saved = self.recorder.stop(self._pending_filename)
             self._pending_filename = None
-            self._publish_status(extra={"saved_recording": saved})
+            extra["saved_recording"] = saved
 
         if new_state == State.PRACTICE:
-            if self._pending_song_id:
-                try:
-                    self.practice.load_song(self._pending_song_id)
-                    self.practice.start()
-                except Exception as exc:
-                    self.sm.state = State.IDLE
-                    self.led.set_state(State.IDLE)
-                    self._pending_song_id = None
-                    self._publish_status(extra={"error": str(exc)})
-                    return
+            if self._pending_song_id is None:
+                self.sm.state = State.IDLE
+                self.led.set_state(State.IDLE)
+                extra["error"] = "song_id is required to start practice"
+                self._publish_status(extra=extra)
+                return
+
+            try:
+                self.practice.load_song(self._pending_song_id)
+                self.practice.start()
+            except Exception as exc:
+                self.sm.state = State.IDLE
+                self.led.set_state(State.IDLE)
+                self._pending_song_id = None
+                extra["error"] = str(exc)
+                new_state = State.IDLE
             self._pending_song_id = None
 
         if old_state == State.PRACTICE and new_state == State.IDLE:
@@ -100,7 +108,7 @@ class Controller:
         if new_state == State.IDLE:
             self._last_activity = time.time()
 
-        self._publish_status()
+        self._publish_status(extra=extra or None)
 
     # ---- MQTT command handling ----
     def _on_cmd_message(self, payload):
@@ -133,10 +141,12 @@ class Controller:
     def _on_midi_note(self, msg, ts):
         self.recorder.handle_note(msg, ts)
 
-        if self.sm.state != State.PRACTICE:
-            return
+        with self._lock:
+            if self.sm.state != State.PRACTICE:
+                return
 
-        result = self.practice.handle_note(msg, ts)
+            result = self.practice.handle_note(msg, ts)
+
         if result is None:
             return
 
