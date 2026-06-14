@@ -30,8 +30,13 @@ class PracticeSession:
             if not f.endswith(".json"):
                 continue
             song_id = f[:-5]
-            with open(os.path.join(self.songs_dir, f), encoding="utf-8") as fp:
-                data = json.load(fp)
+            try:
+                with open(os.path.join(self.songs_dir, f), encoding="utf-8") as fp:
+                    data = json.load(fp)
+            except (json.JSONDecodeError, OSError):
+                continue
+            if not isinstance(data, dict):
+                continue
             result.append({"id": song_id, "title": data.get("title", song_id)})
         return result
 
@@ -94,7 +99,7 @@ class PracticeSession:
         idx = self.index
 
         return {
-            "title": self.song["title"],
+            "title": self.song.get("title", "Unknown"),
             "index": idx,
             "total": total,
             "prev": note_name(notes[idx - 1]) if idx > 0 else None,

@@ -19,7 +19,7 @@
       <option value="{{ song.id }}">{{ song.title }}</option>
       {% endfor %}
     </select>
-    <button onclick="startPractice()">연습 시작</button>
+    <button id="startPracticeBtn" onclick="startPractice()">연습 시작</button>
   </div>
 
   <div id="practiceArea" style="display:none">
@@ -45,7 +45,7 @@
       document.getElementById("selectArea").style.display = inPractice ? "none" : "block";
       document.getElementById("practiceArea").style.display = inPractice ? "block" : "none";
       document.getElementById("songSelect").disabled = isSleep;
-      document.querySelector("#selectArea button:last-child").disabled = isSleep;
+      document.getElementById("startPracticeBtn").disabled = isSleep;
 
       if (inPractice && status.practice) {
         const p = status.practice;
