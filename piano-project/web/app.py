@@ -48,6 +48,8 @@ def api_cmd():
     return jsonify({"ok": True})
 
 
+mqtt_client.start()
+
+
 if __name__ == "__main__":
-    mqtt_client.start()
     app.run(host="0.0.0.0", port=5000)
