@@ -23,7 +23,9 @@ function pollStatus(callback) {
     fetch("/api/status")
       .then(res => res.json())
       .then(callback)
-      .catch(() => {});
+      .catch(() => {
+  document.getElementById("state").textContent = "연결 끊김";
+});
   }
   tick();
   setInterval(tick, 200);
