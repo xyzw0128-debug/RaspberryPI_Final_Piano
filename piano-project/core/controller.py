@@ -47,8 +47,8 @@ class Controller:
             self._feedback_timer = None
         self.midi.stop()
         self.mqtt.loop_stop()
-        self.led.cleanup()
         self.pir.cleanup()
+        self.led.cleanup()
 
     # ---- event handling ----
     def handle_event(self, event):
