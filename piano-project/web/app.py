@@ -1,5 +1,7 @@
 # web/app.py
 
+import os
+
 from flask import Flask, render_template, request, jsonify
 
 from practice.session import PracticeSession
@@ -48,7 +50,14 @@ def api_cmd():
     return jsonify({"ok": True})
 
 
-mqtt_client.start()
+def _should_start_mqtt():
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        return True
+    return os.environ.get("FLASK_DEBUG", "").lower() not in ("1", "true")
+
+
+if _should_start_mqtt():
+    mqtt_client.start()
 
 
 if __name__ == "__main__":

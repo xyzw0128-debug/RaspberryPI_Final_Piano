@@ -10,12 +10,20 @@ class MqttClient:
         self.port = port
         self._client = mqtt.Client(client_id=client_id)
         self._client.on_connect = self._on_connect
+        self._client.on_disconnect = self._on_disconnect
         self._client.on_message = self._on_message
         self._subscriptions = {}  # topic -> callback
+        self._connected = False
 
     def _on_connect(self, client, userdata, flags, rc):
+        self._connected = (rc == 0)
+        if not self._connected:
+            return
         for topic in self._subscriptions:
             self._client.subscribe(topic)
+
+    def _on_disconnect(self, client, userdata, rc):
+        self._connected = False
 
     def _on_message(self, client, userdata, msg):
         callback = self._subscriptions.get(msg.topic)
@@ -34,8 +42,8 @@ class MqttClient:
         self._client.loop_start()
 
     def loop_stop(self):
-        self._client.loop_stop()
         self._client.disconnect()
+        self._client.loop_stop()
 
     def subscribe(self, topic, callback):
         """
@@ -43,7 +51,8 @@ class MqttClient:
         connect() 이전/이후 모두 호출 가능
         """
         self._subscriptions[topic] = callback
-        self._client.subscribe(topic)
+        if self._connected:
+            self._client.subscribe(topic)
 
     def publish(self, topic, payload):
         """
