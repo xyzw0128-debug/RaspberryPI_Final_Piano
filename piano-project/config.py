@@ -33,6 +33,8 @@ RECORDINGS_DIR = BASE_DIR / "recordings"
 SONGS_DIR = BASE_DIR / "practice" / "songs"
 LOGS_DIR = BASE_DIR / "logs"
 LOG_FILE = LOGS_DIR / "main.log"
+MIDI_PORT_STATE_FILE = BASE_DIR / "state" / "midi_port.json"
 
 # ===== MIDI =====
-MIDI_PORT_NAME = None  # None이면 자동으로 첫 번째 입력 포트 사용
+# One-time seed used only when no persisted MIDI port has been selected yet.
+MIDI_PORT_NAME = None

@@ -12,6 +12,7 @@ from recording.recorder import Recorder
 from practice.session import PracticeSession
 from mqtt.client import MqttClient
 import config
+import midi_config
 
 
 class Controller:
@@ -19,7 +20,9 @@ class Controller:
         self.sm = StateMachine(initial_state=State.SLEEP)
         self.led = LedController(config.LED_PIN_MAP)
         self.pir = PIRSensor(config.PIR_PIN, bounce_ms=config.PIR_BOUNCE_MS)
-        self.midi = MidiInput(config.MIDI_PORT_NAME)
+        selected_port = midi_config.load_selected_port() or config.MIDI_PORT_NAME
+        self._saved_midi_port = selected_port
+        self.midi = MidiInput(selected_port)
         self.recorder = Recorder(config.RECORDINGS_DIR)
         self.practice = PracticeSession(config.SONGS_DIR)
         self.mqtt = MqttClient(config.MQTT_BROKER_HOST, config.MQTT_BROKER_PORT, client_id="controller")
@@ -140,6 +143,47 @@ class Controller:
         elif action == "stop_practice":
             self.handle_event(Event.CMD_STOP_PRACTICE)
 
+        elif action == "set_midi_port":
+            self.set_midi_port(payload.get("port_name"))
+
+    def set_midi_port(self, port_name):
+        with self._lock:
+            if self.sm.state in (State.RECORDING, State.PRACTICE):
+                self._publish_status(extra={"error": "busy"})
+                return
+
+        if not isinstance(port_name, str) or not port_name:
+            self._publish_status(extra={"error": "port_name is required"})
+            return
+
+        try:
+            self.midi.set_port(port_name)
+        except Exception as exc:
+            self._publish_status(extra={"error": f"failed to switch MIDI port: {exc}"})
+            return
+
+        midi_config.save_selected_port(port_name)
+        self._saved_midi_port = port_name
+        self._publish_status(extra={"midi_port_applied": port_name})
+
+    def refresh_midi_port(self):
+        with self._lock:
+            if self.sm.state in (State.RECORDING, State.PRACTICE):
+                return
+
+        saved_port = midi_config.load_selected_port()
+        if not saved_port or saved_port == self.midi.port_name:
+            return
+        if saved_port not in self.midi.list_ports():
+            return
+        try:
+            self.midi.set_port(saved_port)
+        except Exception as exc:
+            self._publish_status(extra={"error": f"failed to reconnect MIDI port: {exc}"})
+            return
+        self._saved_midi_port = saved_port
+        self._publish_status(extra={"midi_port_applied": saved_port})
+
     # ---- MIDI handling ----
     def _on_midi_note(self, msg, ts):
         self.recorder.handle_note(msg, ts)
@@ -190,6 +234,9 @@ class Controller:
         status = {
             "state": self.sm.state.value,
             "recordings": self.recorder.list_recordings(),
+            "midi_ports": self.midi.list_ports(),
+            "midi_current_port": self.midi.port_name,
+            "midi_saved_port": midi_config.load_selected_port(),
         }
         if self.sm.state == State.PRACTICE:
             status["practice"] = self.practice.get_progress()

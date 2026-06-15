@@ -17,6 +17,7 @@ ALLOWED_ACTIONS = {
     "stop_record",
     "start_practice",
     "stop_practice",
+    "set_midi_port",
 }
 
 

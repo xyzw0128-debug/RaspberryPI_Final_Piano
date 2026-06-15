@@ -4,7 +4,14 @@ import threading
 from mqtt.client import MqttClient
 import config
 
-DEFAULT_STATUS = {"state": "sleep", "recordings": [], "practice": None}
+DEFAULT_STATUS = {
+    "state": "sleep",
+    "recordings": [],
+    "practice": None,
+    "midi_ports": [],
+    "midi_current_port": None,
+    "midi_saved_port": None,
+}
 status_cache = dict(DEFAULT_STATUS)
 _lock = threading.Lock()
 _start_lock = threading.Lock()
