@@ -11,6 +11,12 @@
   <p id="stateHelp"></p>
   <button id="wakeBtn" onclick="sendCmd({action: 'wake'})">Sleep 해제</button>
   <button id="sleepBtn" onclick="sendCmd({action: 'sleep'})">Sleep 전환</button>
+  <section>
+    <h2>MIDI 입력</h2>
+    <p>현재 포트: <span id="midiCurrentPort">-</span></p>
+    <select id="midiPortSelect"></select>
+    <button onclick="applyMidiPort()">MIDI 포트 적용</button>
+  </section>
   <nav>
     <a href="/record"><button id="recordNavBtn">녹음</button></a>
     <a href="/practice"><button id="practiceNavBtn">연습</button></a>
@@ -27,6 +33,10 @@
       document.getElementById("sleepBtn").style.display = status.state === "idle" ? "inline-block" : "none";
       document.getElementById("recordNavBtn").disabled = isSleep;
       document.getElementById("practiceNavBtn").disabled = isSleep;
+      updateMidiPortSelect(status);
+      if (status.error) {
+        document.getElementById("stateHelp").textContent = status.error;
+      }
     }
     pollStatus(update);
   </script>

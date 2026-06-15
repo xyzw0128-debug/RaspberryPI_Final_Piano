@@ -29,6 +29,7 @@ def main():
         logging.info("Controller started. Entering main loop.")
 
         while True:
+            controller.refresh_midi_port()
             time.sleep(1)
 
     except KeyboardInterrupt:
