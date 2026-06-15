@@ -37,8 +37,8 @@ class Controller:
 
     def start(self):
         self.midi.start()
-        self.mqtt.connect()
         self.mqtt.loop_start()
+        self.mqtt.connect()
         self.led.set_state(self.sm.state)
         self._publish_status()
 
