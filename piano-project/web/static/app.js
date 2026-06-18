@@ -12,7 +12,6 @@ function stateLabel(state) {
   const labels = {
     sleep: "SLEEP (절전)",
     idle: "IDLE (대기)",
-    recording: "RECORDING (녹음 중)",
     practice: "PRACTICE (연습 중)",
   };
   return labels[state] || state || "-";

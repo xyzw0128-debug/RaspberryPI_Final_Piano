@@ -6,7 +6,6 @@ import config
 
 DEFAULT_STATUS = {
     "state": "sleep",
-    "recordings": [],
     "practice": None,
     "midi_ports": [],
     "midi_current_port": None,
