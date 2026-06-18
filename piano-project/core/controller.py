@@ -4,11 +4,9 @@ import threading
 import time
 
 from core.state_machine import StateMachine, State, Event
-from hardware.enums import LED
 from hardware.led_controller import LedController
 from hardware.pir_sensor import PIRSensor
 from hardware.midi_io import MidiInput
-from recording.recorder import Recorder
 from practice.session import PracticeSession
 from mqtt.client import MqttClient
 import config
@@ -23,14 +21,12 @@ class Controller:
         selected_port = midi_config.load_selected_port() or config.MIDI_PORT_NAME
         self._saved_midi_port = selected_port
         self.midi = MidiInput(selected_port)
-        self.recorder = Recorder(config.RECORDINGS_DIR)
         self.practice = PracticeSession(config.SONGS_DIR)
         self.mqtt = MqttClient(config.MQTT_BROKER_HOST, config.MQTT_BROKER_PORT, client_id="controller")
 
         self._lock = threading.RLock()
         self._last_activity = time.time()
         self._feedback_timer = None
-        self._pending_filename = None
         self._pending_song_id = None
 
         # wiring
@@ -64,7 +60,7 @@ class Controller:
                 self._last_activity = time.time()
 
             if not changed:
-                if event.value.startswith("cmd_") and old_state in (State.RECORDING, State.PRACTICE):
+                if event.value.startswith("cmd_") and old_state == State.PRACTICE:
                     self._publish_status(extra={"error": "busy"})
                 return
 
@@ -73,19 +69,8 @@ class Controller:
     def _on_state_changed(self, old_state, new_state, event):
         extra = {}
 
-        if old_state == State.RECORDING and new_state == State.IDLE:
-            self.led.stop_blink()
-
         self.led.set_state(new_state)
 
-        if new_state == State.RECORDING:
-            self.recorder.start()
-            self.led.start_blink(LED.REC_GREEN)
-
-        if old_state == State.RECORDING and new_state == State.IDLE:
-            saved = self.recorder.stop(self._pending_filename)
-            self._pending_filename = None
-            extra["saved_recording"] = saved
 
         if new_state == State.PRACTICE:
             if self._pending_song_id is None:
@@ -129,13 +114,6 @@ class Controller:
         elif action == "sleep":
             self.handle_event(Event.CMD_SLEEP)
 
-        elif action == "start_record":
-            self.handle_event(Event.CMD_START_RECORD)
-
-        elif action == "stop_record":
-            self._pending_filename = payload.get("filename")
-            self.handle_event(Event.CMD_STOP_RECORD)
-
         elif action == "start_practice":
             self._pending_song_id = payload.get("song_id")
             self.handle_event(Event.CMD_START_PRACTICE)
@@ -148,7 +126,7 @@ class Controller:
 
     def set_midi_port(self, port_name):
         with self._lock:
-            if self.sm.state in (State.RECORDING, State.PRACTICE):
+            if self.sm.state == State.PRACTICE:
                 self._publish_status(extra={"error": "busy"})
                 return
 
@@ -168,7 +146,7 @@ class Controller:
 
     def refresh_midi_port(self):
         with self._lock:
-            if self.sm.state in (State.RECORDING, State.PRACTICE):
+            if self.sm.state == State.PRACTICE:
                 return
 
         saved_port = midi_config.load_selected_port()
@@ -186,8 +164,6 @@ class Controller:
 
     # ---- MIDI handling ----
     def _on_midi_note(self, msg, ts):
-        self.recorder.handle_note(msg, ts)
-
         with self._lock:
             if self.sm.state != State.PRACTICE:
                 return
@@ -233,7 +209,6 @@ class Controller:
     def _publish_status(self, extra=None):
         status = {
             "state": self.sm.state.value,
-            "recordings": self.recorder.list_recordings(),
             "midi_ports": self.midi.list_ports(),
             "midi_current_port": self.midi.port_name,
             "midi_saved_port": midi_config.load_selected_port(),

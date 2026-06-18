@@ -29,7 +29,6 @@ PRACTICE_FEEDBACK_SEC = 0.3
 # ===== 경로 =====
 BASE_DIR = Path(__file__).resolve().parent
 
-RECORDINGS_DIR = BASE_DIR / "recordings"
 SONGS_DIR = BASE_DIR / "practice" / "songs"
 LOGS_DIR = BASE_DIR / "logs"
 LOG_FILE = LOGS_DIR / "main.log"

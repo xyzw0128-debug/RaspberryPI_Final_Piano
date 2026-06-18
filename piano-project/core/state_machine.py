@@ -6,7 +6,6 @@ from enum import Enum
 class State(Enum):
     SLEEP = "sleep"
     IDLE = "idle"
-    RECORDING = "recording"
     PRACTICE = "practice"
 
 
@@ -14,8 +13,6 @@ class Event(Enum):
     PIR_DETECTED = "pir_detected"
     CMD_WAKE = "cmd_wake"
     CMD_SLEEP = "cmd_sleep"
-    CMD_START_RECORD = "cmd_start_record"
-    CMD_STOP_RECORD = "cmd_stop_record"
     CMD_START_PRACTICE = "cmd_start_practice"
     CMD_STOP_PRACTICE = "cmd_stop_practice"
     PRACTICE_COMPLETE = "practice_complete"
@@ -30,11 +27,8 @@ TRANSITIONS = {
 
     (State.IDLE, Event.PIR_DETECTED): State.IDLE,
     (State.IDLE, Event.CMD_SLEEP): State.SLEEP,
-    (State.IDLE, Event.CMD_START_RECORD): State.RECORDING,
     (State.IDLE, Event.CMD_START_PRACTICE): State.PRACTICE,
 
-    (State.RECORDING, Event.CMD_STOP_RECORD): State.IDLE,
-    (State.RECORDING, Event.PIR_DETECTED): State.RECORDING,
 
     (State.PRACTICE, Event.CMD_STOP_PRACTICE): State.IDLE,
     (State.PRACTICE, Event.PRACTICE_COMPLETE): State.IDLE,
