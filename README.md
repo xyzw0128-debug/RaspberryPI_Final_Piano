@@ -5,9 +5,9 @@ Raspberry Pi 5 Ubuntu에서 동작하는 피아노 연습 보조 프로젝트입
 ## 핵심 기능
 
 - PIR 센서 감지 또는 웹 버튼으로 SLEEP 상태를 해제합니다.
-- Flask 단일 화면에서 현재 상태, MIDI 포트, 곡 선택, 연습 진행도를 확인합니다.
+- Flask 단일 화면에서 현재 상태, MIDI 포트, 곡 선택, 연습 진행도, 오답 횟수, 완주 결과를 확인합니다.
 - MQTT로 Flask 프로세스와 하드웨어 컨트롤러 프로세스를 분리해 통신합니다.
-- MIDI 입력을 현재 곡의 기대 음과 비교해 정답/오답을 판정합니다.
+- MIDI 입력을 현재 곡의 기대 음과 비교해 정답/오답을 판정하고, 틀린 횟수를 연습 세션 단위로 누적합니다.
 - LED로 대기, 정답, 오답, 완주 피드백을 표시합니다.
 
 ## 구조
@@ -71,11 +71,30 @@ mosquitto_pub -h localhost -t piano/cmd -m '{"action":"start_practice","song_id"
     "total": 42,
     "prev": "D4",
     "current": "E4",
-    "next": "F4"
+    "next": "F4",
+    "mistakes": 1
   },
   "midi_ports": ["USB MIDI Interface"],
   "midi_current_port": "USB MIDI Interface",
-  "midi_saved_port": "USB MIDI Interface"
+  "midi_saved_port": "USB MIDI Interface",
+  "last_result": null
+}
+```
+
+연습을 완주해 상태가 `idle`로 돌아가면 진행 중 연습 정보 대신 마지막 완주 결과가 `last_result`에 유지됩니다.
+
+```json
+{
+  "state": "idle",
+  "midi_ports": ["USB MIDI Interface"],
+  "midi_current_port": "USB MIDI Interface",
+  "midi_saved_port": "USB MIDI Interface",
+  "last_result": {
+    "title": "Twinkle Twinkle Little Star",
+    "mistakes": 2,
+    "completed_notes": 42,
+    "total": 42
+  }
 }
 ```
 
@@ -84,22 +103,22 @@ mosquitto_pub -h localhost -t piano/cmd -m '{"action":"start_practice","song_id"
 | 구분 | 핀 번호 | 설명 |
 |---|---:|---|
 | PIR 센서 | GPIO 16 | 움직임 감지 |
-| LED_REC_GREEN | GPIO 17 | 예비 LED |
-| LED_REC_RED | GPIO 27 | IDLE 대기 상태 표시 |
-| LED_PRACTICE_GREEN | GPIO 22 | 연습 정답/완주 표시 |
-| LED_PRACTICE_BLUE | GPIO 23 | 연습 모드 대기 표시 |
-| LED_PRACTICE_RED | GPIO 24 | 연습 오답 표시 |
+| IDLE_LED | GPIO 17 | IDLE 대기 상태 표시 |
+| SLEEP_LED | GPIO 27 | SLEEP 절전 상태 표시 |
+| PRACTICE_CORRECT_LED | GPIO 22 | 연습 정답/완주 표시 |
+| PRACTICE_READY_LED | GPIO 23 | 연습 모드 대기 표시 |
+| PRACTICE_WRONG_LED | GPIO 24 | 연습 오답 표시 |
 
 ### LED 동작 요약
 
 | 상태/상황 | LED 동작 |
 |---|---|
-| SLEEP | 전체 소등 |
-| IDLE | REC_RED 점등 |
-| PRACTICE 대기 | PRACTICE_BLUE 점등 |
-| PRACTICE 정답 | PRACTICE_GREEN 점등 후 BLUE 복귀 |
-| PRACTICE 오답 | PRACTICE_RED 점등 후 BLUE 복귀 |
-| PRACTICE 완주 | PRACTICE_GREEN 3회 점멸 |
+| SLEEP | SLEEP_LED 점등 |
+| IDLE | IDLE_LED 점등 |
+| PRACTICE 대기 | PRACTICE_READY_LED 점등 |
+| PRACTICE 정답 | PRACTICE_CORRECT_LED 점등 후 PRACTICE_READY_LED 복귀 |
+| PRACTICE 오답 | PRACTICE_WRONG_LED 점등 후 PRACTICE_READY_LED 복귀 |
+| PRACTICE 완주 | PRACTICE_CORRECT_LED 3회 점멸 |
 
 ## 상태 전이표
 
@@ -116,9 +135,16 @@ mosquitto_pub -h localhost -t piano/cmd -m '{"action":"start_practice","song_id"
 
 | 경로 | 설명 |
 |---|---|
-| `/` | 상태 표시, SLEEP 전환, MIDI 포트 선택, 곡 선택, 연습 시작/종료, 진행도 표시 |
-| `/practice` | 이전 링크 호환용. `/`로 redirect |
-| `/record` | 이전 링크 호환용. `/`로 redirect |
+| `/` | 상태 표시, SLEEP 전환, MIDI 포트 선택, 연습 결과, 곡 선택, 연습 시작/종료, 진행도 표시 |
+
+홈 화면은 다음 순서로 구성됩니다.
+
+1. **장치 준비**: SLEEP 해제 또는 SLEEP 전환 버튼을 제공합니다.
+2. **MIDI 입력 선택**: 현재 MIDI 포트와 선택 가능한 MIDI 입력 포트를 보여주고 적용할 수 있습니다.
+3. **연습 결과**: 직전 연습을 완주한 뒤 곡 제목, 틀린 횟수, 완주한 음 수를 표시합니다. 연습 중이거나 결과가 없으면 숨겨집니다.
+4. **곡 선택 후 연습 시작**: 연습할 곡을 선택하고 시작합니다.
+5. **연습 중 화면**: 이전 음, 현재 누를 음, 다음 음, 진행률, 현재까지의 오답 횟수를 보여줍니다.
+
 
 ## Raspberry Pi 5 Ubuntu 설치
 

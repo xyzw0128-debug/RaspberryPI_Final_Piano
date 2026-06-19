@@ -2,7 +2,7 @@
 
 import os
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 
 from practice.session import PracticeSession
 from web import mqtt_client
@@ -23,16 +23,6 @@ ALLOWED_ACTIONS = {
 def index():
     songs = song_catalog.list_songs()
     return render_template("index.html", songs=songs)
-
-
-@app.route("/record")
-def record_page():
-    return redirect(url_for("index"))
-
-
-@app.route("/practice")
-def practice_page():
-    return redirect(url_for("index"))
 
 
 @app.route("/api/status")

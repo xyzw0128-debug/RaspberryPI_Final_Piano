@@ -4,8 +4,8 @@ from enum import Enum
 
 
 class LED(Enum):
-    REC_GREEN = "rec_green"
-    REC_RED = "rec_red"
-    PRACTICE_GREEN = "practice_green"
-    PRACTICE_BLUE = "practice_blue"
-    PRACTICE_RED = "practice_red"
+    IDLE_LED = "idle_led"
+    SLEEP_LED = "sleep_led"
+    PRACTICE_CORRECT_LED = "practice_correct_led"
+    PRACTICE_READY_LED = "practice_ready_led"
+    PRACTICE_WRONG_LED = "practice_wrong_led"

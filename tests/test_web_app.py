@@ -27,11 +27,9 @@ class WebAppPracticeOnlyTest(unittest.TestCase):
         self.assertNotIn("start_record", ALLOWED_ACTIONS)
         self.assertNotIn("stop_record", ALLOWED_ACTIONS)
 
-    def test_legacy_pages_redirect_home(self):
-        self.assertEqual(self.client.get("/practice").status_code, 302)
-        self.assertEqual(self.client.get("/practice").headers["Location"], "/")
-        self.assertEqual(self.client.get("/record").status_code, 302)
-        self.assertEqual(self.client.get("/record").headers["Location"], "/")
+    def test_removed_legacy_pages_return_not_found(self):
+        self.assertEqual(self.client.get("/practice").status_code, 404)
+        self.assertEqual(self.client.get("/record").status_code, 404)
 
     def test_rejects_recording_commands(self):
         response = self.client.post("/api/cmd", json={"action": "start_record"})
