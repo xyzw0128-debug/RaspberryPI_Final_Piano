@@ -10,8 +10,8 @@ from hardware.enums import LED
 
 # 상태 → 기본 점등 LED 매핑 (필요시 수정)
 STATE_LED_MAP = {
-    State.SLEEP: [],
-    State.IDLE: [LED.REC_RED],          # 대기 상태 표시
+    State.SLEEP: [LED.REC_RED],          # 절전 상태 표시
+    State.IDLE: [LED.REC_GREEN],         # 대기 상태 표시
     State.PRACTICE: [LED.PRACTICE_BLUE],  # 입력 대기 표시
 }
 
