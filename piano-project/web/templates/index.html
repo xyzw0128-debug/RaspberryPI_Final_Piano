@@ -21,21 +21,6 @@
       </div>
     </header>
 
-    <section id="resultArea" class="result-card" style="display:none" aria-live="polite">
-      <p class="eyebrow">연습 결과</p>
-      <h2 id="resultTitle">연습을 완료했습니다!</h2>
-      <div class="result-grid">
-        <div>
-          <span>틀린 횟수</span>
-          <strong id="resultMistakes">0회</strong>
-        </div>
-        <div>
-          <span>완주한 음</span>
-          <strong id="resultProgress">0 / 0</strong>
-        </div>
-      </div>
-      <p id="resultMessage">다시 연습하면 결과가 새로 기록됩니다.</p>
-    </section>
 
     <section class="step-card">
       <div class="step-number">1</div>
@@ -60,6 +45,23 @@
           <button id="midiApplyBtn" class="secondary" onclick="applyMidiPort()">포트 적용</button>
         </div>
       </div>
+    </section>
+
+
+    <section id="resultArea" class="result-card" style="display:none" aria-live="polite">
+      <p class="eyebrow">연습 결과</p>
+      <h2 id="resultTitle">연습을 완료했습니다!</h2>
+      <div class="result-grid">
+        <div>
+          <span>틀린 횟수</span>
+          <strong id="resultMistakes">0회</strong>
+        </div>
+        <div>
+          <span>완주한 음</span>
+          <strong id="resultProgress">0 / 0</strong>
+        </div>
+      </div>
+      <p id="resultMessage">다시 연습하면 결과가 새로 기록됩니다.</p>
     </section>
 
     <section id="selectArea" class="step-card highlight">
