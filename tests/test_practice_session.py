@@ -34,20 +34,26 @@ class PracticeSessionTest(unittest.TestCase):
                     "prev": None,
                     "current": "C4",
                     "next": "D4",
+                    "mistakes": 0,
                 },
             )
 
             wrong = session.handle_note(SimpleNamespace(type="note_on", note=61), 0)
-            self.assertEqual(wrong, {"correct": False, "complete": False})
+            self.assertEqual(wrong, {"correct": False, "complete": False, "mistakes": 1})
             self.assertEqual(session.get_progress()["index"], 0)
+            self.assertEqual(session.get_progress()["mistakes"], 1)
 
             correct = session.handle_note(SimpleNamespace(type="note_on", note=60), 1)
-            self.assertEqual(correct, {"correct": True, "complete": False})
+            self.assertEqual(correct, {"correct": True, "complete": False, "mistakes": 1})
             self.assertEqual(session.get_progress()["current"], "D4")
 
             complete = session.handle_note(SimpleNamespace(type="note_on", note=62), 2)
-            self.assertEqual(complete, {"correct": True, "complete": True})
+            self.assertEqual(complete, {"correct": True, "complete": True, "mistakes": 1})
             self.assertFalse(session.is_active)
+            self.assertEqual(
+                session.get_result(),
+                {"title": "Scale", "mistakes": 1, "completed_notes": 2, "total": 2},
+            )
 
 
 if __name__ == "__main__":
