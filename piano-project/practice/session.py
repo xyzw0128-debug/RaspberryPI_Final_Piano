@@ -18,6 +18,7 @@ class PracticeSession:
         self.songs_dir = songs_dir
         self.song = None
         self.index = 0
+        self.mistakes = 0
         self.is_active = False
 
     def list_songs(self):
@@ -57,12 +58,14 @@ class PracticeSession:
             raise ValueError("곡 notes는 비어 있지 않은 리스트여야 합니다.")
 
         self.index = 0
+        self.mistakes = 0
         self.is_active = False
 
     def start(self):
         if not self.song:
             raise RuntimeError("곡이 로드되지 않았습니다.")
         self.index = 0
+        self.mistakes = 0
         self.is_active = True
 
     def stop(self):
@@ -86,10 +89,11 @@ class PracticeSession:
             complete = self.index >= len(self.song["notes"])
             if complete:
                 self.is_active = False
-            return {"correct": True, "complete": complete}
+            return {"correct": True, "complete": complete, "mistakes": self.mistakes}
 
-        # 틀린 음 - 진행도는 유지, 오답 피드백만 반환 (범위 밖: 리셋/채점 없음)
-        return {"correct": False, "complete": False}
+        # 틀린 음 - 진행도는 유지하고 오답 횟수만 누적합니다.
+        self.mistakes += 1
+        return {"correct": False, "complete": False, "mistakes": self.mistakes}
 
     def get_progress(self):
         if not self.song:
@@ -105,4 +109,16 @@ class PracticeSession:
             "prev": note_name(notes[idx - 1]) if idx > 0 else None,
             "current": note_name(notes[idx]) if idx < total else None,
             "next": note_name(notes[idx + 1]) if idx + 1 < total else None,
+            "mistakes": self.mistakes,
+        }
+
+    def get_result(self):
+        if not self.song:
+            return None
+        total = len(self.song["notes"])
+        return {
+            "title": self.song.get("title", "Unknown"),
+            "mistakes": self.mistakes,
+            "completed_notes": min(self.index, total),
+            "total": total,
         }

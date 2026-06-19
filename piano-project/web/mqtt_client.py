@@ -10,6 +10,7 @@ DEFAULT_STATUS = {
     "midi_ports": [],
     "midi_current_port": None,
     "midi_saved_port": None,
+    "last_result": None,
 }
 status_cache = dict(DEFAULT_STATUS)
 _lock = threading.Lock()
