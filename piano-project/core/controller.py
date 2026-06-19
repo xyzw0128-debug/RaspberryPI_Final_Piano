@@ -28,6 +28,7 @@ class Controller:
         self._last_activity = time.time()
         self._feedback_timer = None
         self._pending_song_id = None
+        self._last_practice_result = None
 
         # wiring
         self.pir.on_motion(lambda: self.handle_event(Event.PIR_DETECTED))
@@ -82,6 +83,7 @@ class Controller:
             try:
                 self.practice.load_song(self._pending_song_id)
                 self.practice.start()
+                self._last_practice_result = None
             except Exception as exc:
                 self._rollback_failed_practice_start()
                 self._pending_song_id = None
@@ -169,6 +171,9 @@ class Controller:
                 return
 
             result = self.practice.handle_note(msg, ts)
+            completed_result = self.practice.get_result() if result and result["complete"] else None
+            if completed_result:
+                self._last_practice_result = completed_result
 
         if result is None:
             return
@@ -212,6 +217,7 @@ class Controller:
             "midi_ports": self.midi.list_ports(),
             "midi_current_port": self.midi.port_name,
             "midi_saved_port": midi_config.load_selected_port(),
+            "last_result": self._last_practice_result,
         }
         if self.sm.state == State.PRACTICE:
             status["practice"] = self.practice.get_progress()

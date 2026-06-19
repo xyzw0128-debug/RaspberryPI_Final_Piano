@@ -25,11 +25,6 @@ def index():
     return render_template("index.html", songs=songs)
 
 
-@app.route("/record")
-def record_page():
-    return redirect(url_for("index"))
-
-
 @app.route("/practice")
 def practice_page():
     return redirect(url_for("index"))

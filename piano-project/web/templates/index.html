@@ -2,45 +2,101 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Piano Practice Assistant</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>Piano Practice Assistant</h1>
-  <p>현재 상태: <span id="state">-</span></p>
-  <p id="stateHelp"></p>
+  <main class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Raspberry Pi Piano</p>
+        <h1>피아노 연습 도우미</h1>
+        <p class="hero-copy">곡을 고르고, 화면의 현재 음을 연주하세요. LED와 결과 화면으로 정답과 오답을 바로 확인할 수 있습니다.</p>
+      </div>
+      <div id="stateCard" class="state-card">
+        <span class="state-label">현재 상태</span>
+        <strong id="state">-</strong>
+        <p id="stateHelp">장치 상태를 확인하는 중입니다.</p>
+      </div>
+    </header>
 
-  <section>
-    <h2>전원 상태</h2>
-    <button id="wakeBtn" onclick="sendCmd({action: 'wake'})">Sleep 해제</button>
-    <button id="sleepBtn" onclick="sendCmd({action: 'sleep'})">Sleep 전환</button>
-  </section>
+    <section id="resultArea" class="result-card" style="display:none" aria-live="polite">
+      <p class="eyebrow">연습 결과</p>
+      <h2 id="resultTitle">연습을 완료했습니다!</h2>
+      <div class="result-grid">
+        <div>
+          <span>틀린 횟수</span>
+          <strong id="resultMistakes">0회</strong>
+        </div>
+        <div>
+          <span>완주한 음</span>
+          <strong id="resultProgress">0 / 0</strong>
+        </div>
+      </div>
+      <p id="resultMessage">다시 연습하면 결과가 새로 기록됩니다.</p>
+    </section>
 
-  <section>
-    <h2>MIDI 입력</h2>
-    <p>현재 포트: <span id="midiCurrentPort">-</span></p>
-    <select id="midiPortSelect"></select>
-    <button id="midiApplyBtn" onclick="applyMidiPort()">MIDI 포트 적용</button>
-  </section>
+    <section class="step-card">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h2>장치 준비</h2>
+        <p>절전 상태라면 먼저 깨운 뒤 연습을 시작하세요.</p>
+        <div class="button-row">
+          <button id="wakeBtn" onclick="sendCmd({action: 'wake'})">절전 해제</button>
+          <button id="sleepBtn" class="secondary" onclick="sendCmd({action: 'sleep'})">절전 전환</button>
+        </div>
+      </div>
+    </section>
 
-  <section id="selectArea">
-    <h2>연습 시작</h2>
-    <select id="songSelect">
-      {% for song in songs %}
-      <option value="{{ song.id }}">{{ song.title }}</option>
-      {% endfor %}
-    </select>
-    <button id="startPracticeBtn" onclick="startPractice()">연습 시작</button>
-  </section>
+    <section class="step-card">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h2>MIDI 입력 선택</h2>
+        <p>사용할 키보드가 다르면 포트를 선택하고 적용하세요.</p>
+        <p class="current-port">현재 포트: <span id="midiCurrentPort">-</span></p>
+        <div class="input-row">
+          <select id="midiPortSelect" aria-label="MIDI 포트 선택"></select>
+          <button id="midiApplyBtn" class="secondary" onclick="applyMidiPort()">포트 적용</button>
+        </div>
+      </div>
+    </section>
 
-  <section id="practiceArea" style="display:none">
-    <h2 id="songTitle"></h2>
-    <p>이전 음: <span id="prevNote">-</span></p>
-    <p>현재 음: <span id="currentNote">-</span></p>
-    <p>다음 음: <span id="nextNote">-</span></p>
-    <p id="progress"></p>
-    <button id="stopPracticeBtn" onclick="sendCmd({action: 'stop_practice'})">연습 종료</button>
-  </section>
+    <section id="selectArea" class="step-card highlight">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <h2>곡 선택 후 연습 시작</h2>
+        <p>연습 중에는 현재 음을 맞게 누를 때만 다음 음으로 넘어갑니다.</p>
+        <div class="input-row">
+          <select id="songSelect" aria-label="연습 곡 선택">
+            {% for song in songs %}
+            <option value="{{ song.id }}">{{ song.title }}</option>
+            {% endfor %}
+          </select>
+          <button id="startPracticeBtn" onclick="startPractice()">연습 시작</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="practiceArea" class="practice-card" style="display:none" aria-live="polite">
+      <div class="practice-header">
+        <div>
+          <p class="eyebrow">연습 중</p>
+          <h2 id="songTitle"></h2>
+        </div>
+        <button id="stopPracticeBtn" class="secondary danger" onclick="sendCmd({action: 'stop_practice'})">연습 종료</button>
+      </div>
+      <div class="note-board">
+        <div><span>이전 음</span><strong id="prevNote">-</strong></div>
+        <div class="current-note"><span>현재 누를 음</span><strong id="currentNote">-</strong></div>
+        <div><span>다음 음</span><strong id="nextNote">-</strong></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-info"><span id="progress">0 / 0</span><span id="mistakeCount">오답 0회</span></div>
+        <div class="progress-bar"><span id="progressBar"></span></div>
+      </div>
+    </section>
+  </main>
 
   <script src="/static/app.js"></script>
   <script>
@@ -51,30 +107,52 @@
 
       document.getElementById("state").textContent = stateLabel(status.state);
       document.getElementById("stateHelp").textContent = isSleep
-        ? "현재 SLEEP 상태입니다. Sleep 해제 버튼 또는 PIR 감지 후 연습할 수 있습니다."
-        : "곡을 선택해 연습을 시작하고, MIDI 입력에 따라 LED로 정답/오답을 확인합니다.";
+        ? "절전 해제 버튼을 누르면 곡을 선택할 수 있습니다."
+        : inPractice
+          ? "화면 가운데의 현재 음을 연주하세요. 틀려도 같은 음을 다시 시도하면 됩니다."
+          : "아래 1→2→3 순서대로 준비하고 연습을 시작하세요.";
+      document.getElementById("stateCard").className = `state-card state-${status.state || "unknown"}`;
       document.getElementById("wakeBtn").style.display = isSleep ? "inline-block" : "none";
       document.getElementById("sleepBtn").style.display = isIdle ? "inline-block" : "none";
 
-      document.getElementById("selectArea").style.display = inPractice ? "none" : "block";
+      document.getElementById("selectArea").style.display = inPractice ? "none" : "flex";
       document.getElementById("practiceArea").style.display = inPractice ? "block" : "none";
       document.getElementById("songSelect").disabled = isSleep;
       document.getElementById("startPracticeBtn").disabled = isSleep;
 
       updateMidiPortSelect(status);
+      updateResult(status.last_result, inPractice);
 
       if (inPractice && status.practice) {
         const p = status.practice;
+        const percent = p.total ? Math.round((p.index / p.total) * 100) : 0;
         document.getElementById("songTitle").textContent = p.title;
         document.getElementById("prevNote").textContent = p.prev || "-";
         document.getElementById("currentNote").textContent = p.current || "-";
         document.getElementById("nextNote").textContent = p.next || "-";
         document.getElementById("progress").textContent = `${p.index} / ${p.total}`;
+        document.getElementById("mistakeCount").textContent = `오답 ${p.mistakes || 0}회`;
+        document.getElementById("progressBar").style.width = `${percent}%`;
       }
 
       if (status.error) {
         document.getElementById("stateHelp").textContent = status.error;
       }
+    }
+
+    function updateResult(result, inPractice) {
+      const area = document.getElementById("resultArea");
+      if (!result || inPractice) {
+        area.style.display = "none";
+        return;
+      }
+      area.style.display = "block";
+      document.getElementById("resultTitle").textContent = `${result.title} 완주!`;
+      document.getElementById("resultMistakes").textContent = `${result.mistakes || 0}회`;
+      document.getElementById("resultProgress").textContent = `${result.completed_notes || result.total} / ${result.total}`;
+      document.getElementById("resultMessage").textContent = (result.mistakes || 0) === 0
+        ? "완벽하게 연주했습니다. 훌륭해요!"
+        : "틀린 횟수를 확인하고 같은 곡을 다시 연습해 보세요.";
     }
 
     function startPractice() {

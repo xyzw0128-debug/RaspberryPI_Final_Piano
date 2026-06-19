@@ -116,9 +116,8 @@ mosquitto_pub -h localhost -t piano/cmd -m '{"action":"start_practice","song_id"
 
 | 경로 | 설명 |
 |---|---|
-| `/` | 상태 표시, SLEEP 전환, MIDI 포트 선택, 곡 선택, 연습 시작/종료, 진행도 표시 |
+| `/` | 상태 표시, SLEEP 전환, MIDI 포트 선택, 곡 선택, 연습 시작/종료, 진행도 및 완주 결과 표시 |
 | `/practice` | 이전 링크 호환용. `/`로 redirect |
-| `/record` | 이전 링크 호환용. `/`로 redirect |
 
 ## Raspberry Pi 5 Ubuntu 설치
 
