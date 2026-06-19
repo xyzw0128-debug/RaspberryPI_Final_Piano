@@ -103,22 +103,22 @@ mosquitto_pub -h localhost -t piano/cmd -m '{"action":"start_practice","song_id"
 | 구분 | 핀 번호 | 설명 |
 |---|---:|---|
 | PIR 센서 | GPIO 16 | 움직임 감지 |
-| LED_REC_GREEN | GPIO 17 | IDLE 대기 상태 표시 |
-| LED_REC_RED | GPIO 27 | SLEEP 절전 상태 표시 |
-| LED_PRACTICE_GREEN | GPIO 22 | 연습 정답/완주 표시 |
-| LED_PRACTICE_BLUE | GPIO 23 | 연습 모드 대기 표시 |
-| LED_PRACTICE_RED | GPIO 24 | 연습 오답 표시 |
+| IDLE_LED | GPIO 17 | IDLE 대기 상태 표시 |
+| SLEEP_LED | GPIO 27 | SLEEP 절전 상태 표시 |
+| PRACTICE_CORRECT_LED | GPIO 22 | 연습 정답/완주 표시 |
+| PRACTICE_READY_LED | GPIO 23 | 연습 모드 대기 표시 |
+| PRACTICE_WRONG_LED | GPIO 24 | 연습 오답 표시 |
 
 ### LED 동작 요약
 
 | 상태/상황 | LED 동작 |
 |---|---|
-| SLEEP | REC_RED 점등 |
-| IDLE | REC_GREEN 점등 |
-| PRACTICE 대기 | PRACTICE_BLUE 점등 |
-| PRACTICE 정답 | PRACTICE_GREEN 점등 후 BLUE 복귀 |
-| PRACTICE 오답 | PRACTICE_RED 점등 후 BLUE 복귀 |
-| PRACTICE 완주 | PRACTICE_GREEN 3회 점멸 |
+| SLEEP | SLEEP_LED 점등 |
+| IDLE | IDLE_LED 점등 |
+| PRACTICE 대기 | PRACTICE_READY_LED 점등 |
+| PRACTICE 정답 | PRACTICE_CORRECT_LED 점등 후 PRACTICE_READY_LED 복귀 |
+| PRACTICE 오답 | PRACTICE_WRONG_LED 점등 후 PRACTICE_READY_LED 복귀 |
+| PRACTICE 완주 | PRACTICE_CORRECT_LED 3회 점멸 |
 
 ## 상태 전이표
 
@@ -136,7 +136,6 @@ mosquitto_pub -h localhost -t piano/cmd -m '{"action":"start_practice","song_id"
 | 경로 | 설명 |
 |---|---|
 | `/` | 상태 표시, SLEEP 전환, MIDI 포트 선택, 연습 결과, 곡 선택, 연습 시작/종료, 진행도 표시 |
-| `/practice` | 이전 링크 호환용. `/`로 redirect |
 
 홈 화면은 다음 순서로 구성됩니다.
 
@@ -146,7 +145,6 @@ mosquitto_pub -h localhost -t piano/cmd -m '{"action":"start_practice","song_id"
 4. **곡 선택 후 연습 시작**: 연습할 곡을 선택하고 시작합니다.
 5. **연습 중 화면**: 이전 음, 현재 누를 음, 다음 음, 진행률, 현재까지의 오답 횟수를 보여줍니다.
 
-`/record` 경로와 녹음용 웹 화면은 제공하지 않습니다.
 
 ## Raspberry Pi 5 Ubuntu 설치
 

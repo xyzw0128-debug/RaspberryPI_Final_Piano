@@ -206,10 +206,6 @@ class Controller:
             if self.sm.state == State.PRACTICE:
                 self.led.reset_practice_indicator()
 
-    # ---- idle timeout check (수동 sleep 전환으로 변경되어 현재는 사용하지 않음) ----
-    def check_timeout(self):
-        return
-
     # ---- status publish ----
     def _publish_status(self, extra=None):
         status = {
